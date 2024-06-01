@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 function QuestionForm(props) {
   const [formData, setFormData] = useState({
@@ -10,6 +10,25 @@ function QuestionForm(props) {
     correctIndex: 0,
   });
 
+  const [questions, setQuestions] = useState([]);
+
+  useEffect(() => {
+    const fetchQuestions = async () => {
+      try {
+        const response = await fetch("http://localhost:4000/questions");
+        if (!response.ok) {
+          throw new Error("Failed to fetch questions");
+        }
+        const data = await response.json();
+        setQuestions(data);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    fetchQuestions();
+  }, []);
+
   function handleChange(event) {
     setFormData({
       ...formData,
@@ -17,10 +36,48 @@ function QuestionForm(props) {
     });
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
-    console.log(formData);
+    const newQuestion = {
+      prompt: formData.prompt,
+      answers: [formData.answer1, formData.answer2, formData.answer3, formData.answer4],
+      correctIndex: parseInt(formData.correctIndex, 10),
+    };
+
+    try {
+      const response = await fetch("http://localhost:4000/questions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(newQuestion),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to add question");
+      }
+
+      const addedQuestion = await response.json();
+      setQuestions([...questions, addedQuestion]);
+      setFormData({
+        prompt: "",
+        answer1: "",
+        answer2: "",
+        answer3: "",
+        answer4: "",
+        correctIndex: 0,
+      });
+    } catch (error) {
+      console.error(error);
+    }
   }
+
+ 
+
+  // function handleSubmit(event) {
+  //   event.preventDefault();
+  //   console.log(formData);
+  // }
 
   return (
     <section>
